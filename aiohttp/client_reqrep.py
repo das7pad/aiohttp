@@ -354,7 +354,7 @@ class ClientRequest:
         finally:
             self._writer = None
 
-    def send(self, conn):
+    def send(self, conn, session_owner=False):
         # Specify request target:
         # - CONNECT request must send authority form URI
         # - not CONNECT proxy must send absolute form URI
@@ -409,7 +409,7 @@ class ClientRequest:
             request_info=self.request_info
         )
 
-        self.response._post_init(self.loop, self._session)
+        self.response._post_init(self.loop, self._session, session_owner)
         return self.response
 
     @asyncio.coroutine
@@ -447,6 +447,7 @@ class ClientResponse(HeadersMixin):
     _loop = None
     _closed = True  # to allow __del__ for non-initialized properly response
     _session = None
+    _session_owner = False
 
     def __init__(self, method, url, *,
                  writer=None, continue100=None, timer=None,
@@ -488,9 +489,10 @@ class ClientResponse(HeadersMixin):
     def request_info(self):
         return self._request_info
 
-    def _post_init(self, loop, session):
+    def _post_init(self, loop, session, session_owner=False):
         self._loop = loop
         self._session = session  # store a reference to session #1985
+        self._session_owner = session_owner
         if loop.get_debug():
             self._source_traceback = traceback.extract_stack(sys._getframe(1))
 
@@ -656,6 +658,8 @@ class ClientResponse(HeadersMixin):
         if self._writer is not None and not self._writer.done():
             self._writer.cancel()
         self._writer = None
+        if self._session_owner:
+            self._session.close()
         self._session = None
 
     def _notify_content(self):

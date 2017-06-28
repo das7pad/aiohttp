@@ -152,7 +152,8 @@ class ClientSession:
                  read_until_eof=True,
                  proxy=None,
                  proxy_auth=None,
-                 timeout=sentinel):
+                 timeout=sentinel,
+                 session_owner=False):
 
         # NOTE: timeout clamps existing connect and read timeouts.  We cannot
         # set the default to None because we need to detect if the user wants
@@ -236,7 +237,7 @@ class ClientSession:
 
                     conn.writer.set_tcp_nodelay(True)
                     try:
-                        resp = req.send(conn)
+                        resp = req.send(conn, session_owner)
                         try:
                             yield from resp.start(conn, read_until_eof)
                         except:
@@ -767,5 +768,6 @@ def request(method, url, *,
                          expect100=expect100,
                          read_until_eof=read_until_eof,
                          proxy=proxy,
-                         proxy_auth=proxy_auth,),
+                         proxy_auth=proxy_auth,
+                         session_owner=True),
         session=session)

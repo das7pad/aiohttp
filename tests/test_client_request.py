@@ -1099,12 +1099,12 @@ def test_custom_req_rep(loop):
 
     class CustomRequest(ClientRequest):
 
-        def send(self, conn):
+        def send(self, conn, session_owner=False):
             resp = self.response_class(self.method,
                                        self.url,
                                        writer=self._writer,
                                        continue100=self._continue)
-            resp._post_init(self.loop, mock.Mock())
+            resp._post_init(self.loop, mock.Mock(), session_owner)
             self.response = resp
             nonlocal called
             called = True
